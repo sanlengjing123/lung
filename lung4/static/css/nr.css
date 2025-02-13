@@ -1,0 +1,235 @@
+/* 第一屏 开始*/
+		html body{
+		/* 	height: 3000px; */
+			overflow-y: scroll;
+		}
+		/* .all{
+			padding-top: 112.2px;
+		} */
+		#content .index1 img{
+			width: 1215px;
+			height: 520px;
+			z-index: 1;
+			/* opacity:0.4;
+			filter:alpha(opacity=40); */
+			position: relative;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			margin: auto;
+		}
+		#fgx1{
+			height: 60px;
+			width: 100%;
+			/*background:linear-gradient(rgba(0,0,139,0.8),rgba(0,0,139,1),rgba(0,0,139,0.8));*/
+			/*background: black;*/
+			text-align: center;
+			background: #ffffff;
+		}
+		#fgx1 h3{
+			line-height: 60px;
+			font-size: 24px;
+		}
+		#fgx{
+			height: 60px;
+			width: 100%;
+			background: #ffffff;
+			text-align: center;
+		}
+		#fgx h3{
+			line-height: 60px;
+			font-size: 24px;
+		}
+			#fgx2{
+			height: 150px;
+			width: 100%;
+			/*background:linear-gradient(rgba(0,0,139,0.8),rgba(0,0,139,1),rgba(0,0,139,0.8));*/
+			/*background: black;*/
+			text-align: center;
+		}
+		/* 第一屏 结束*/
+		#cpgn{
+			/*background: rgba(0,0,139,0.8);*/
+			/*background: black;*/
+			text-align: center;
+			height: 650px;
+			color: white;
+		}
+		#cpgn .input button {
+			width: 100px;
+			height: 50px;
+			border: 1px solid transparent;
+			border-radius: 4px;
+			background-color: #428bca;
+			color: white;
+		}
+		#cpgn .input input {
+			width: 700px;
+			height: 40px;
+		}
+		#cpgn .xbt .bt1{
+			font-size: 30px;
+		}
+		#cpgn .xbt .bt1::before{
+			content: "";
+			display: block;
+			height: 30px;
+		}
+		#cpgn .xbt .bt1::after{
+			content: "";
+			display: block;
+			height: 5px;
+			width: 260px;
+			background: cadetblue;
+			margin: auto;
+			margin-top: 5px;
+			margin-bottom: 15px;
+		}
+		#cpgn .tpq{
+			width: 826px;
+			position: relative;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			margin: auto;
+		}
+
+		#cpgn .tpq .tpcz{
+			float: left;
+			margin: 50px 30px;
+		}
+		#cpgn .tpq .tpcz img{
+			width: 350px;
+			border: white 5px double;
+			box-sizing:border-box;
+			border-radius: 10%;
+		}
+		#cpgn .tpq1{
+			width: 826px;
+			position: relative;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+
+		}
+		#cpgn .tpq1 .tpcz1{
+			float: left;
+			margin: 80px 80px;
+		}
+		#cpgn .tpq1 .tpcz1 img{
+			width: 350px;
+			border: white 5px double;
+			box-sizing:border-box;
+			border-radius: 10%;
+		}
+
+        #cpmn{
+			/*background: rgba(0,0,139,0.8);*/
+			/*background: black;*/
+			text-align: center;
+			height: 650px;
+			color: white;
+		}
+		#cpmn .input button {
+			width: 100px;
+			height: 50px;
+			border: 1px solid transparent;
+			border-radius: 4px;
+			background-color: #428bca;
+			color: white;
+		}
+		#cpmn .input input {
+			width: 700px;
+			height: 40px;
+		}
+		#cpmn .xbt .bt1{
+			font-size: 30px;
+		}
+		#cpmn .xbt .bt1::before{
+			content: "";
+			display: block;
+			height: 30px;
+		}
+		#cpmn .xbt .bt1::after{
+			content: "";
+			display: block;
+			height: 5px;
+			width: 260px;
+			background: cadetblue;
+			margin: auto;
+			margin-top: 5px;
+			margin-bottom: 15px;
+		}
+		#cpmn .tpq{
+			width: 826px;
+			position: relative;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			margin: auto;
+		}
+
+		#cpmn .tpq .tpcz{
+			float: left;
+			margin: 50px 30px;
+		}
+		#cpmn .tpq .tpcz img{
+			width: 350px;
+			border: white 5px double;
+			box-sizing:border-box;
+			border-radius: 10%;
+		}
+		#cpmn .tpq1{
+			width: 826px;
+			position: relative;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+
+		}
+		#cpmn .tpq1 .tpcz1{
+			float: left;
+			margin: 80px 80px;
+		}
+		#cpmn .tpq1 .tpcz1 img{
+			width: 350px;
+			border: white 5px double;
+			box-sizing:border-box;
+			border-radius: 10%;
+		}
+		/*设置底部*/
+		.footer{
+			height: 80px;
+			background: rgb(65,105,225,0.6);
+			border-top: 5px solid rgba(95,158,160,0.2);	
+		}
+		.footer a{float: left;margin-right: 5px;}
+		.footer a , .footer p{
+			color: white;
+			font: 11px Helvetica ;
+			text-decoration: none;
+		}
+		.footer a:hover{
+			color: #cccaca;
+			text-decoration: underline;
+		}
+		
+		.footer p{
+			margin-left: 8px;
+			margin-right: 23px;
+			margin-bottom: 6px;
+		}
+		
+		.footer .w{
+			padding-top:18px ;
+		}
+		
+		.footer .copy{
+			float: right;
+			display: inline;
+		}

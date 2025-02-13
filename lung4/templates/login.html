@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register&Login</title>
+    <link rel="stylesheet" href="/static/css/lg.css">
+</head>
+<body>
+    <h1 class="t1">欢迎来到脑肿瘤分类系统</h1>
+    <div class="container">
+        <div class="container__overlay">
+            <div class="overlay">
+                <div class="overlay__panel overlay--left">
+                    <button class="btn" id="signIn">Sign In</button>
+                </div>
+                <div class="overlay__panel overlay--right">
+                    <button class="btn" id="signUp">Sign Up</button>
+                </div>
+            </div>
+        </div>
+        <div class="container__form container--signin">
+            <form action="/log_for_bs/" class="form" method="post" id="form1">
+                <h2 class="title">登录</h2>
+                <input type="text" name="Username" placeholder="用户名" class="input"/>
+                <input type="password" name="Password" placeholder="密码" class="input"/>
+                <input type="submit" value="Login" class="btn" />
+                {% if Err_message %}
+                <script>
+                    alert('{{ Err_message }}')
+                </script>
+                {% endif %}
+            </form>
+        </div>
+        <div class="container__form container--signup">
+            <form action="/reg_for_bs/" class="form" id="form2" method="post">
+                <h2 class="title">注册</h2>
+                <input type="text" name="R_Username" placeholder="用户名(字母、下划线和数字的组合)" class="input"/>
+                <input type="password" name="R_Password" placeholder="密码(字母和数字的组合，不少于6位)" class="input"/>
+                <input type="password" name="R1_Password" placeholder="再次确认密码" class="input"/>
+                <input type="submit" class="btn" value="Register" />
+                {% if Err_message_R %}
+                <script>
+                    alert('{{ Err_message_R }}')
+                </script>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    <script src="/static/js/lg.js"></script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>肺部肿瘤分类</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dht.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/nr.css' %}"/>
+    <script type="text/javascript" src="{% static 'js/jquery.js' %}"></script>
+    <script src="{% static 'js/echarts.min.js' %}" type="text/javascript" charset="utf-8"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/augement.js' %}"></script>
+    <!-- 轮播图css -->
+    <link rel="stylesheet" href="{% static 'css/graph1.css' %}">
+    {% if Suc_message %}
+        <script>
+            alert('{{ Suc_message }}')
+        </script>
+    {% endif %}
+    <style>
+        body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative; /* Ensure proper positioning of absolute elements */
+    background: url("{% static 'img/bk2.jpg' %}") no-repeat center center fixed;
+    background-size: cover;
+}
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Ensure canvas doesn't block mouse events */
+    z-index: 1; /* Particle effect layer */
+}
+
+.all {
+    position: relative; /* Ensure z-index works properly */
+    z-index: 2; /* Layer above particle effect */
+}
+
+.footer {
+    position: relative; /* Ensure z-index works properly */
+    z-index: 3; /* Layer above other content */
+    /* Add other styles for the footer if needed */
+     margin-top: 50px; /* 调整这个值来将footer向下移动 */
+}
+
+/* Set background image */
+
+/* 调整第二屏的高度 */
+#cpgn {
+    height: 600px; /* 根据需要调整高度 */
+
+}
+#cpmn {
+    height: 600px; /* 根据需要调整高度 */
+
+}
+/* 设置模型分类结果输入框的位置 */
+.input {
+    position: absolute;
+    top: 80%; /* 根据需要调整垂直位置 */
+    left: 50%; /* 根据需要调整水平位置 */
+    transform: translate(-50%, -50%); /* 水平和垂直居中 */
+    /* 如果需要的话，可以添加其他样式 */
+}
+    </style>
+</head>
+<body>
+<div class="dh">
+    <!-- 头部 -->
+    <header id="head" class="clearfix">
+        <div class="wdht clearfix">
+            <div class="header w">
+                <ul class="nav">
+                    <li>
+                        <a href="/index/">主页</a>
+                    </li>
+                    <li>
+                        <a class="picbreed">肺癌切片分类</a>
+                    </li>
+                    <li>
+                        <a class="picup">图像增强</a>
+                    </li>
+                    <li>
+                        <a href="/tumor_info/">基本信息</a>
+                    </li>
+                    <li>
+                        <a href="/log_out/">退出</a>
+                    </li>
+                </ul>
+                <div class="logo">
+                    <a href="#" title="Brain Tumor Classification Website">
+                        <span style="font-size: 40px; color: #FFFFFF;">面向肺部病理切片的肺癌分类系统</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+</div>
+
+<div class="all">
+    <!-- 轮播图 -->
+    <div class="contentCir" style="width: 100%;">
+        <div style="z-index: 3" class="picCir"><a href=""><img class="imgCir" src="{% static 'img/m1.jpg' %}"></a></div>
+        <div style="z-index: 2" class="picCir"><a href=""><img class="imgCir" src="{% static 'img/m2.jpg' %}"></a></div>
+        <div style="z-index: 1" class="picCir"><a href=""><img class="imgCir" src="{% static 'img/m3.jpg' %}"></a></div>
+        <div class="circleCir">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        <div class="btnCir">
+            <div>
+                &lt;
+            </div>
+            <div>
+                &gt;
+            </div>
+        </div>
+    </div>
+
+    <!-- 第一屏和第二屏过度 -->
+    <div id="fgx">
+        <h3>
+            <marquee scrolldelay="100">积极开展肺癌防治，保障人民身体健康！</marquee>
+        </h3>
+    </div>
+
+    <!-- 第二屏 -->
+    <div id="cpgn" class="clearfix">
+        <div class="xbt">
+            <p class="bt1">肺部病理切片图像分类</p>
+            <p class="btfs">基于深度学习技术进行肺癌的分类。提取，诊断，进行动态变化监测，以及后期治疗计划的制定，都要以图像分类为基础。</p>
+        </div>
+        <!-- 左边 -->
+        <div class="mainbox">
+            <ul class="clearfix">
+                <li>
+                    <div class="boxall" style="width: 700px; height: 600px; margin-left: 40px;">
+                        <div class="sycm">
+                            <ul class="clearfix">
+                                <!-- E-chars图表 -->
+                                <div class="map" style="margin-bottom: .8rem; height: 80%; width: 300px; margin-top: 30px;">
+                                    <li>
+                                        <div style="margin-left: 280px;">
+                                            <h2>模型训练精度</h2>
+                                        </div>
+                                    </li>
+                                    <div id="main1" style="width: 700px; height: 250px;"></div>
+                                    <li>
+                                        <div style="margin-left: 280px;">
+                                            <h2>训练集损失值</h2>
+                                        </div>
+                                    </li>
+                                    <div id="main2" style="width: 700px; height: 250px;"></div>
+                                </div>
+                            </ul>
+                        </div>
+                        <div class="boxfoot"></div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <!-- 右边 -->
+        <div class="tpq clearfix" id="page-right">
+            <div class="tpcz" style="position: absolute; top: -650px; left: 500px; width: 500px; height: 400px;">
+                <img style="width: 100%; height: 100%" src="{% static 'img/xuanze.jpg' %}" alt="pic" id="img">
+                <form method="post" id="showDataForm" action="" enctype="multipart/form-data">
+                    <div class="fileOne">
+                        <input type="file" name="Tumor" autocomplete="off" id="mf">
+                        <input class="btn" type="button" value="提交">
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="input" style="position: absolute; top: 1250px; left: 870px;">
+            <input type="text" class="scjg" readonly="readonly" style="width: 370%; border: 6px double #716e77" id="Cla_result" placeholder="模型分类结果为: "/>
+        </div>
+    </div>
+
+    <!-- 第二屏和第三屏过渡 -->
+    <div id="fgx1"  style="position: absolute; top: 1300px;">
+<h3>
+    <marquee scrolldelay="100">积极开展肺癌防治，保障人民身体健康！</marquee>
+        </h3>
+          </div>
+    <div id="cpmn" class="clearfix">
+    <div class="xbt">
+        <p class="bt1">肺部病理切片图像增强</p>
+        <p class="btfs">基于深度学习技术进行肺癌的病理全切片图像增强。图像增强操作有利于提高肺癌切片分类的准确性。</p>
+    </div>
+    <!-- 左边 -->
+    <div class="mainbox">
+        <ul class="clearfix">
+                <div class="boxall" style="width: 700px; height: 600px; margin-left: 40px;">
+                    <div class="tpq1 clearfix" style="position: absolute;bottom: 5px; left: 0px; width: 500px; height: 400px;">
+                        <div class="tpcz1">
+                            <img style="width: 100%; height: 100% ;top:0" src="{% static 'img/show.png' %}" alt="pic" id="enhancedImg">
+                        </div>
+                        <!-- 新添加的按钮部分 -->
+                        <div class="btn-wrapper" style="position: absolute; top: 0px; left: 0; width: 100%; text-align: center;">
+                            <button class="augment-btn btn-primary" data-action="denoise">去噪</button>
+                            <button class="augment-btn btn-secondary" data-action="binarize">二值化</button>
+                            <button class="augment-btn btn-primary" data-action="grayscale">灰度变换</button>
+                            <button class="augment-btn btn-secondary" data-action="rotate">旋转</button>
+                        </div>
+                    </div>
+                </div>
+
+        </ul>
+    </div>
+    <!-- 右边 -->
+    <div class="tpq clearfix" id="page-right">
+        <div class="tpcz" style="position: absolute; top: -650px; left: 500px; width: 400px; height: 400px;">
+            <img style="width: 100%; height: 100%" src="{% static 'img/xuanze.jpg' %}" alt="pic" id="img2">
+            <form method="post" id="uploadForm" action="" enctype="multipart/form-data">
+                <div class="fileOne">
+                    <input type="file" name="myfile" autocomplete="off" id="fileInput">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+</div>
+<!-- 第三屏和第四屏过渡 -->
+<div id="fgx2" >
+
+</div>
+
+<!-- 底部 -->
+<div class="footer">
+    <div class="w">
+        <p class="copy">Copyright 2023. Studio SYS. All Rights Reserved.</p>
+        <p>SYS ancient poetry generator developed by SYS.</p>
+        <p>
+            <a href="/index/">Home</a>
+            <a href="/tumor_infor/">About</a>
+            <a href="#">Products</a>
+            <a href="#">Services</a>
+            <a href="#">Contact</a>
+        </p>
+    </div>
+</div>
+
+<!-- 画布 -->
+<canvas id="canvas"></canvas>
+
+<!-- 添加粒子特效 -->
+<script>
+    // 获取canvas对象
+    var canvas = document.getElementById("canvas");
+    // 获取画笔
+    var ctx = canvas.getContext("2d");
+
+    // 设置canvas宽高
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+
+    // 定义一个粒子数组
+    var particlesArray = [];
+    // 定义页面内粒子的数量
+    var count = parseInt(canvas.width / 80 * canvas.height / 80);
+
+    // 定义粒子类
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            // x，y轴的移动速度  -0.5 -- 0.5
+            this.directionX = Math.random() - 0.5;
+            this.directionY = Math.random() - 0.5;
+        }
+
+        // 更新点的坐标
+        update() {
+            this.x += this.directionX;
+            this.y += this.directionY;
+        }
+
+        // 绘制粒子
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fillStyle = "white";
+            ctx.fill();
+        }
+    }
+
+    // 创建粒子
+    function createParticle() {
+        // 生成一个点的随机坐标
+        var x = Math.random() * window.innerWidth;
+        var y = Math.random() * window.innerHeight;
+
+        particlesArray.push(new Particle(x, y));
+    }
+
+    // 处理粒子
+    // 先更新坐标，再绘制出来
+    function handleParticle() {
+        for (var i = 0; i < particlesArray.length; i++) {
+            var particle = particlesArray[i];
+            particle.update();
+            particle.draw();
+            // 超出范围就将这个粒子删除
+            if (particle.x < 0 || particle.x > canvas.width || particle.y < 0 || particle.y > canvas.height) {
+                particlesArray.splice(i, 1);
+            }
+
+            // 绘制两个点之间的连线
+            for (var j = i + 1; j < particlesArray.length; j++) {
+                var dx = particlesArray[j].x - particlesArray[i].x;
+                var dy = particlesArray[j].y - particlesArray[i].y;
+                var dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+                if (dist < 100) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = "rgba(255, 255, 255, " + (1 - dist / 100) + ")";
+                    ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+                    ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+                    ctx.closePath();
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    function draw() {
+        // 首先清空画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 如果粒子数量小于规定数量，就生成新的粒子
+        if (particlesArray.length < count) {
+            createParticle();
+        }
+
+        // 处理粒子
+        handleParticle();
+    }
+
+    // 设置定时器
+    setInterval(draw, 10);
+
+    // 窗口调整时，重新设置canvas的宽高
+    window.addEventListener('resize', function () {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+</script>
+
+<!-- 主页动画js -->
+<script src="{% static 'js/index.js' %}"></script>
+
+<!-- 动态折线图js -->
+<script type="text/javascript" src="{% static 'js/graphy1.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/graphy2.js' %}"></script>
+<!-- 轮播图js -->
+<script type="text/javascript" src="{% static 'js/graphStyle1.js' %}"></script>
+<!-- 页面内跳转 -->
+<script language="javascript" type="text/javascript">
+    $(function () {
+        $(".picbreed").click(function () {
+            $("#cpgn")[0].scrollIntoView(true);
+        });
+    });
+    $(function () {
+        $(".picup").click(function () {
+            $("#cpmn")[0].scrollIntoView(true);
+        });
+    });
+</script>
+<!-- 实现页面内显示分类结果 -->
+<script type="text/javascript" src="{% static 'js/showres.js' %}"></script>
+
+</body>
+</html>
