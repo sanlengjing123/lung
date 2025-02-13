@@ -1,0 +1,203 @@
+import os
+import math
+import argparse
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parents[1]))  # 将父级目录加入执行目录列表
+import torch
+import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
+from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
+import transforms as trans
+import matplotlib.pyplot as plt
+import torchvision
+from My_Data import WSI_Data
+from Lung_WSI_Datasets.Essential_Processing import Read_Data
+from vit_model import vit_large_patch32_224_in21k as create_model  # 调用ViT-base_16模型架构，在ImageNet_in21k预训练
+from utils import train_one_epoch, evaluate  # 调用训练和评估的步骤
+
+
+def show_transformed_images(data_loader):
+    batch = next(iter(data_loader))
+    images, labels = batch
+    for i, image in enumerate(images):
+        img = image.permute(1, 2, 0).numpy()
+        img = (img * 0.229 + 0.485) * 255  # 反归一化
+        img = img.astype("uint8")
+        plt.figure()
+        plt.imshow(img)
+        plt.title(f'Transformed Image {i + 1}')
+        plt.axis('off')
+        plt.show()
+
+
+def main(args):  # 传入参数
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")  # 应用设备
+    print("using device", device)
+
+    if os.path.exists("./weights") is False:  # 存放微调权重的文件夹
+        os.makedirs("./weights")
+
+    tb_writer = SummaryWriter()  # 实时显示训练过程
+
+    ## 设置数据
+    Train_Images, Train_Labels = Read_Data(os.path.join(args.data_path, "Train0"))  # 分别读取
+    Test_Images, Test_Labels = Read_Data(os.path.join(args.data_path, "Test0"))
+
+    trainsize = (224, 224)
+
+    data_transform = {
+        "train": transforms.Compose([
+            trans.CropCenterSquare(),
+            transforms.Resize(trainsize),
+            # trans.CenterCrop(self.trainsize),
+            trans.RandomHorizontalFlip(),
+            trans.RandomVerticalFlip(),
+            trans.RandomRotation(30),
+            # trans.adjust_light(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
+
+        "test": transforms.Compose([trans.CropCenterSquare(),
+                                    transforms.Resize(trainsize),
+                                    # trans.CenterCrop(self.trainsize),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
+
+    Train_data = MRI_Data(Train_Images, Train_Labels, data_transform["train"])
+
+    # 实例化验证数据集
+    Test_data = MRI_Data(Test_Images, Test_Labels, data_transform["test"])
+
+    batch_size = args.batch_size  # 批大小
+
+    ## 指定加载数据batch的工作进程数，一般越大速度越快，但也应根据cpu的性能来选择
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers（根据cpu数目）
+    print('Using {} dataloader workers every process'.format(nw))
+    # 设置训练集的数据加载器
+    Train_loader = torch.utils.data.DataLoader(Train_data,
+                                               batch_size=batch_size,
+                                               shuffle=True,
+                                               # pin_memory = True,  # 是否拷贝到那个区域，在GPU上更快
+                                               num_workers=nw,
+                                               collate_fn=Train_data.collate_fn)
+
+    # 设置验证集的数据加载器
+    Test_loader = torch.utils.data.DataLoader(Test_data,
+                                              batch_size=batch_size,
+                                              shuffle=False,
+                                              # pin_memory=True,
+                                              num_workers=nw,  # 使用多少个子进程来导入数据（必须大于0）
+                                              collate_fn=Test_data.collate_fn)  # 如何取样本
+
+    # 显示一些增强后的训练图像
+    show_transformed_images(Train_loader)
+
+    model = create_model(num_classes=2, has_logits=False).to(device)  # 使用改进后的模型时has_logits为True
+
+    if args.freeze_layers:  # 冻结层
+        for name, para in model.named_parameters():
+            # 除head, pre_logits外，其他权重全部冻结
+            if "head" not in name and "pre_logits" not in name:
+                para.requires_grad_(False)  # 冻结参数
+            else:
+                print("training {}".format(name))
+    pg = [p for p in model.parameters() if p.requires_grad]  # 需要进行更新的
+    optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-5)
+    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    # 学习率策略，余弦退火算法
+    Epoch = args.Extra_epochs + args.epochs if args.Resume else args.epochs
+    scheduler = lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=Epoch)  # T_max是进行周期的epoch数
+
+    # lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf
+    #  scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+
+    ## 判断是否进行断点续训
+    if args.Resume:
+        print("Start continue training！")
+        Weights_path = args.checkpoints
+        Weights_checkpoint = torch.load(Weights_path, map_location=device)
+        Weights = Weights_checkpoint["model_state_dict"]  # 可训练参数的文件
+        optimizer.load_state_dict(Weights_checkpoint["optimizer_state_dict"])
+        scheduler.load_state_dict(Weights_checkpoint["scheduler_state_dict"])
+        start_epoch = Weights_checkpoint["epoch"]
+        end_epoch = start_epoch + args.Extra_epochs + 1
+    else:
+        Weights_path = args.weights
+        Weights = torch.load(Weights_path, map_location=device)
+        start_epoch = -1
+        end_epoch = args.epochs
+
+    if Weights_path != "":  # 存在预训练权重时
+        assert os.path.exists(Weights_path), "weights file: '{}' not exist.".format(Weights_path)
+        weights_dict = Weights
+        if args.Resume:  # 续训不需要删除权重
+            print(model.load_state_dict(weights_dict, strict=False))
+        else:
+            # 删除不需要的权重
+            del_keys = ['head.weight', 'head.bias'] if not model.has_logits \
+                else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
+            for k in del_keys:
+                del weights_dict[k]  # 进行删除
+            print(weights_dict.keys())
+            print(model.load_state_dict(weights_dict, strict=False))  # 不加载不存在的参数
+
+    for epoch in range(start_epoch + 1, end_epoch):
+        # train，训练一个epoch
+        train_loss, train_acc = train_one_epoch(model=model,
+                                                optimizer=optimizer,
+                                                data_loader=Train_loader,
+                                                device=device,
+                                                epoch=epoch)
+
+        scheduler.step()
+
+        tags = ["train_loss", "train_acc", "learning_rate"]
+        tb_writer.add_scalar(tags[0], train_loss, epoch)
+        tb_writer.add_scalar(tags[1], train_acc, epoch)
+        # tb_writer.add_scalar(tags[2], val_loss, epoch)
+        # tb_writer.add_scalar(tags[3], val_acc, epoch)
+        tb_writer.add_scalar(tags[2], optimizer.param_groups[0]["lr"], epoch)
+
+        if (epoch + 1) % 25 == 0:  # 每隔3个epoch进行一次保存
+            ## 保存checkpoint，防止意外中断
+            torch.save({
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "loss": train_loss,
+                "scheduler_state_dict": scheduler.state_dict()
+            }, "./weights/model-epoch-{}.pth".format(epoch + 1))
+
+    # 对最终训练好的模型进行测试，得到其泛化能力
+    Te_acc = evaluate(model=model, data_loader=Test_loader, device=device)
+    print("最终模型在测试集上的平均精度为%.2f%%" % (Te_acc * 100))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--num-classes', type=int, default=2)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lrf', type=float, default=0.01)
+
+    parser.add_argument('--model-name', default='', help='create model name')
+
+    parser.add_argument('--data-path', type=str, default="../Lung_WSI_Datasets/Original Data")
+    # 预训练权重路径，如果不想载入就设置为空字符
+    parser.add_argument('--weights', type=str, default="./Pretrained_Weights/vit_large_patch32_224_in21k.pth",
+                        help='initial weights path')
+    # 是否冻结权重
+    parser.add_argument('--freeze-layers', type=bool, default=True)
+    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+
+    ## 是否进行断点续训
+    parser.add_argument('--Resume', type=bool, default=False)
+    # parser.add_argument('--checkpoints', type = str, default = "./weights/" + os.listdir("weights")[0])
+    parser.add_argument('--Extra-epochs', type=int, default=6)
+
+    opt = parser.parse_args()
+
+    main(opt)
